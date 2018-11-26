@@ -1,14 +1,14 @@
 import nltk
 import warc
-import spacy
+#import spacy
 from bs4 import BeautifulSoup
 from nltk.corpus import wordnet
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
-from spacy.lemmatizer import Lemmatizer
-nlp = spacy.load('en')
-from spacy.lang.en import LEMMA_INDEX, LEMMA_EXC, LEMMA_RULES
+#from spacy.lemmatizer import Lemmatizer
+#nlp = spacy.load('en')
+#from spacy.lang.en import LEMMA_INDEX, LEMMA_EXC, LEMMA_RULES
 
 def strip_http_headers(http_reply):
     """ Removes the HTTP response headers from http_reply byte-array """
@@ -49,7 +49,6 @@ if __name__ == '__main__':
         tokens = nltk.word_tokenize(page_text)
 
         # Continue here doing something with the tokens...
-        print(tokens)
 
         # Lemmatization using Spacy
         #lem = Lemmatizer()
@@ -58,6 +57,11 @@ if __name__ == '__main__':
         #    tokens1 = nlp(w)
         #    #tokens_lem = tokens1.lower()
         #    print ("Actual:%s Lemma: %s" % (w, lem(u'tokens1')))
+
+        #POS taggin transform lower capital
+        tagged_sent = nltk.pos_tag([w.lower() for w in tokens])
+        normalized_sent = [w.capitalize() if t in ["NN","NNS"] else w for (w,t) in tagged_sent]
+        print(normalized_sent)
 
         # Lemmatization using NLTK
         lem = WordNetLemmatizer()
@@ -80,4 +84,6 @@ if __name__ == '__main__':
             tokens_stop = w.lower()
             if tokens_stop not in stop_words:
                 filtered_tokens.append(w)
-        print(filtered_tokens)
+
+        #POS tagging
+            #print(nltk.pos_tag(filtered_tokens))
