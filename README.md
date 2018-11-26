@@ -9,35 +9,42 @@
 To see files what files are staged to be pushed to git type:
 
 ```bash
-git status```
+git status
+```
 
 
 ### Pull latest code
 ```bash
-git pull```
+git pull
+```
 
 
 ### Push new code
 ```bash
 git add <changed_files>
 git commit -m "commit message"
-git push```
+git push
+```
 
 The first time you might have to run the following command instead of `git push` to configure git properly:
 ```bash
-git push -u origin master```
+git push -u origin master
+```
 
 
 If you get an error about local changes then you have to merge your local code with the code on github:
 
 1. Stash your local code:
 ```bash
-git stash```
+git stash
+```
 2. Pull the latest code from the github sever:
 ```bash
-git pull```
+git pull
+```
 3. Merge (hopefully happens automatically, if a conflict happens you need to go into the relevant file and fix it yourself):
 ```bash
-git stash pop```
+git stash pop
+```
 
 If there were no conflicts or you manually fixed them, you can now push the merged code to github (see section "Push new code")
