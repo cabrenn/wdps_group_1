@@ -50,7 +50,7 @@ git stash pop
 If there were no conflicts or you manually fixed them, you can now push the merged code to github (see section "Push new code")
 
 ## When own version is not good anymore 
-git pull 
-git fetch - - all
-git reset --hard origin/master
-git pull  
+```git pull 
+```git fetch - - all
+```git reset --hard origin/master
+```git pull  
