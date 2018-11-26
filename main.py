@@ -31,6 +31,9 @@ if __name__ == '__main__':
             first_record = False
             continue
 
+        # The document ID corresponding to this record
+        document_id = record['WARC-Trec-ID']
+
         # Removes HTTP header from the WARC records
         html = strip_http_headers(record.payload.read())
 
