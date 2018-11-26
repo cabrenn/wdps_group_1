@@ -7,7 +7,8 @@ from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from spacy.lemmatizer import Lemmatizer
-
+nlp = spacy.load('en')
+from spacy.lang.en import LEMMA_INDEX, LEMMA_EXC, LEMMA_RULES
 
 def strip_http_headers(http_reply):
     """ Removes the HTTP response headers from http_reply byte-array """
@@ -50,15 +51,22 @@ if __name__ == '__main__':
         # Continue here doing something with the tokens...
         print(tokens)
 
-        #lemmatization
-        Lem = Lemmatizer()
+        # Lemmatization using Spacy
+        #lem = Lemmatizer()
+        #lem = Lemmatizer(LEMMA_INDEX, LEMMA_EXC, LEMMA_RULES)
+        #for w in tokens:
+        #    tokens1 = nlp(w)
+        #    #tokens_lem = tokens1.lower()
+        #    print ("Actual:%s Lemma: %s" % (w, lem(u'tokens1')))
 
-           for w in tokens:
-        tokens_lem = w.lower()
-        print ("Actual:%s Lemma: %s" % (tokens_lem, Lem.lemmatize(tokens_lem)))
+        # Lemmatization using NLTK
+        lem = WordNetLemmatizer()
+        for w in tokens:
+            tokens_lem = w.lower()
+            lemmatized_tokens = lem.lemmatize(tokens_lem)
+            #print ("Actual:%s Lemma: %s" % (w, lemmatized_tokens))
 
-        #stemming
-
+        # Stemming with Porter
         #porter_stemmer = PorterStemmer()
         #for w in tokens:
             #print("Actual: %s Stem: %s" %(w, porter_stemmer.stem(w)))
