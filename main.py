@@ -1,14 +1,12 @@
-import nltk
 import warc
-#import spacy
+import spacy
 from bs4 import BeautifulSoup
-from nltk.corpus import wordnet
-from nltk.stem import PorterStemmer
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords
-#from spacy.lemmatizer import Lemmatizer
-#nlp = spacy.load('en')
-#from spacy.lang.en import LEMMA_INDEX, LEMMA_EXC, LEMMA_RULES
+from spacy.lang.en import English
+from spacy.tokenizer import Tokenizer
+from spacy.lemmatizer import Lemmatizer
+from spacy.pipeline import Tagger
+from spacy_cld import LanguageDetector
+from spacy.pipeline import DependencyParser
 
 def strip_http_headers(http_reply):
     """ Removes the HTTP response headers from http_reply byte-array """
@@ -21,7 +19,9 @@ def strip_http_headers(http_reply):
 if __name__ == '__main__':
 
     f = warc.open('sample.warc.gz')
-
+    nlp = spacy.load('en')
+    language_detector = LanguageDetector()
+    nlp.add_pipe(language_detector)
     first_record = True
 
     for record in f:
@@ -48,45 +48,37 @@ if __name__ == '__main__':
         # Extract just the text from the HTML
         page_text = soup.get_text()
 
-        # Generate tokens
-        tokens = nltk.word_tokenize(page_text)
+        # Generate tokens with Spacy
+        document = nlp(page_text)
+        # Check for English content
+        if page_text and document._.language_scores['en'] < 0.90:
+            continue
+        # Lemmatization and POS Tagging with Spacy
+        # for w in document:
+        #     print(w, ":", w.lemma_ , ",", w.tag_)
+        # Dependency Parsing
+        parser = DependencyParser(nlp.vocab)
+        processed = parser(document)
+        print(processed)
 
-        # Continue here doing something with the tokens...
 
-        # Lemmatization using Spacy
-        #lem = Lemmatizer()
-        #lem = Lemmatizer(LEMMA_INDEX, LEMMA_EXC, LEMMA_RULES)
-        #for w in tokens:
-        #    tokens1 = nlp(w)
-        #    #tokens_lem = tokens1.lower()
-        #    print ("Actual:%s Lemma: %s" % (w, lem(u'tokens1')))
 
-        #POS taggin transform lower capital
-        tagged_sent = nltk.pos_tag([w.lower() for w in tokens])
-        normalized_sent = [w.capitalize() if t in ["NN","NNS"] else w for (w,t) in tagged_sent]
-        print(normalized_sent)
 
-        # Lemmatization using NLTK
-        lem = WordNetLemmatizer()
-        for w in tokens:
-            tokens_lem = w.lower()
-            lemmatized_tokens = lem.lemmatize(tokens_lem)
-            #print ("Actual:%s Lemma: %s" % (w, lemmatized_tokens))
+        # def represent_word(word):
+        #     text = word.text
+        #     # True-case, i.e. try to normalize sentence-initial capitals.
+        #     # Only do this if the lower-cased form is more probable.
+        #     if text.istitle() and is_sent_begin(word) \
+        #     and word.prob < word.doc.vocab[text.lower()].prob:
+        #         text = text.lower()
+        #     return text + '|' + word.tag_
 
-        # Stemming with Porter
-        #porter_stemmer = PorterStemmer()
-        #for w in tokens:
-            #print("Actual: %s Stem: %s" %(w, porter_stemmer.stem(w)))
-
-        # Defining the English stopwords
-        stop_words = set(stopwords.words('english'))
-
-        # Removing the stopwords from the list of tokens
-        filtered_tokens = []
-        for w in tokens:
-            tokens_stop = w.lower()
-            if tokens_stop not in stop_words:
-                filtered_tokens.append(w)
-
-        #POS tagging
-            #print(nltk.pos_tag(filtered_tokens))
+        ## Defining the English stopwords
+        # stop_words = set(stopwords.words('english'))
+        #
+        ## Removing the stopwords from the list of tokens
+        # filtered_tokens = []
+        # for w in document:
+        #     tokens_stop = w.lower()
+        #     if tokens_stop not in stop_words:
+        #         filtered_tokens.append(w)
