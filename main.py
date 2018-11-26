@@ -1,6 +1,12 @@
 import nltk
 import warc
+import spacy
 from bs4 import BeautifulSoup
+from nltk.corpus import wordnet
+from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+from spacy.lemmatizer import Lemmatizer
 
 
 def strip_http_headers(http_reply):
@@ -18,7 +24,7 @@ if __name__ == '__main__':
     first_record = True
 
     for record in f:
-        # skip the first record (only contains information about the WARC file, 
+        # skip the first record (only contains information about the WARC file,
         # no HTML)
         if first_record:
             first_record = False
@@ -43,3 +49,27 @@ if __name__ == '__main__':
 
         # Continue here doing something with the tokens...
         print(tokens)
+
+        #lemmatization
+        Lem = Lemmatizer()
+
+           for w in tokens:
+        tokens_lem = w.lower()
+        print ("Actual:%s Lemma: %s" % (tokens_lem, Lem.lemmatize(tokens_lem)))
+
+        #stemming
+
+        #porter_stemmer = PorterStemmer()
+        #for w in tokens:
+            #print("Actual: %s Stem: %s" %(w, porter_stemmer.stem(w)))
+
+        # Defining the English stopwords
+        stop_words = set(stopwords.words('english'))
+
+        # Removing the stopwords from the list of tokens
+        filtered_tokens = []
+        for w in tokens:
+            tokens_stop = w.lower()
+            if tokens_stop not in stop_words:
+                filtered_tokens.append(w)
+        print(filtered_tokens)
