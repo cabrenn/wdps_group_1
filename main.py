@@ -16,12 +16,23 @@ def strip_http_headers(http_reply):
     return http_reply
 
 
+def strip_whitespace(text):
+    """ removes whitespace from a given text. """
+    new_text = ''
+    for sentence in text.split('\n'):
+        if not len(sentence) == 0:
+            new_text += (' '.join(sentence.split()) + '\n')
+    return new_text
+
+
 if __name__ == '__main__':
 
     f = warc.open('sample.warc.gz')
+    # nlp = spacy.load('en', disable=['parser', 'ner'])
     nlp = spacy.load('en')
     language_detector = LanguageDetector()
     nlp.add_pipe(language_detector)
+
     first_record = True
 
     for record in f:
@@ -46,32 +57,22 @@ if __name__ == '__main__':
             script.decompose()
 
         # Extract just the text from the HTML
-        page_text = soup.get_text()
+        page_text = strip_whitespace(soup.get_text())
+
 
         # Generate tokens with Spacy
         document = nlp(page_text)
+
         # Check for English content
         if page_text and document._.language_scores['en'] < 0.90:
             continue
-        # Lemmatization and POS Tagging with Spacy
-        # for w in document:
-        #     print(w, ":", w.lemma_ , ",", w.tag_)
-        # Dependency Parsing
-        parser = DependencyParser(nlp.vocab)
-        processed = parser(document)
-        print(processed)
 
-
-
-
-        # def represent_word(word):
-        #     text = word.text
-        #     # True-case, i.e. try to normalize sentence-initial capitals.
-        #     # Only do this if the lower-cased form is more probable.
-        #     if text.istitle() and is_sent_begin(word) \
-        #     and word.prob < word.doc.vocab[text.lower()].prob:
-        #         text = text.lower()
-        #     return text + '|' + word.tag_
+        if document.is_parsed:
+            # for chunk in document.noun_chunks:
+            #     print(document_id, '\t', chunk.text)
+            for e in document.ents:
+                if not e.text.isspace():
+                    print(e.text, '\t', e.label_)
 
         ## Defining the English stopwords
         # stop_words = set(stopwords.words('english'))
