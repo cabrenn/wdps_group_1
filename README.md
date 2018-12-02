@@ -1,7 +1,20 @@
 # Group 1 - Web Data Processing Systems
 [Please describe briefly how your system works, which existing tools you have used and why, and how to run your solution.]
 
+## How to use WDPS application
 
+### Requirements
+
+Python 3+
+
+### Installation
+
+Install required pip packages from ```requirements.txt``` file using ```pip install -r requirements.txt```.
+Run ```python_requirements.sh``` to download and install required files and language models.
+
+### Execution
+
+Run ```run.sh``` to execute the application.
 
 ## Git cheatsheet
 
