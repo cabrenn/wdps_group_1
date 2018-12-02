@@ -1,5 +1,10 @@
 import warc
 import spacy
+import sys
+import subprocess
+import requests
+from subprocess import check_output
+from io import BytesIO
 from bs4 import BeautifulSoup
 from spacy.lang.en import English
 from spacy.tokenizer import Tokenizer
@@ -7,6 +12,24 @@ from spacy.lemmatizer import Lemmatizer
 from spacy.pipeline import Tagger
 from spacy_cld import LanguageDetector
 from spacy.pipeline import DependencyParser
+
+
+def search(domain, query):
+    url = 'http://%s/freebase/label/_search' % domain
+    response = requests.get(url, params={'q': query, 'size':1})
+    id_labels = {}
+    if response:
+        response = response.json()
+        for hit in response.get('hits', {}).get('hits', []):
+            # print(hit)
+            freebase_label = hit.get('_source', {}).get('label')
+            freebase_id = hit.get('_source', {}).get('resource')
+
+            # url2 = 'http://%s/freebase/m/_search' % domain
+            # res2 = requests.get(url2, params={'q': freebase_id, 'size':5})
+            # print(res2.json())
+            id_labels.setdefault(freebase_id, set()).add( freebase_label )
+    return id_labels
 
 def strip_http_headers(http_reply):
     """ Removes the HTTP response headers from http_reply byte-array """
@@ -27,7 +50,9 @@ def strip_whitespace(text):
 
 if __name__ == '__main__':
 
-    f = warc.open('sample.warc.gz')
+    _, DOMAIN = sys.argv
+    hdfs_file = subprocess.check_output(["hdfs", "dfs", "-text", "/user/wdps1801/sample.warc.gz"])
+    f = warc.WARCFile(fileobj=BytesIO(hdfs_file))
     # nlp = spacy.load('en', disable=['parser', 'ner'])
     nlp = spacy.load('en')
     language_detector = LanguageDetector()
@@ -72,8 +97,12 @@ if __name__ == '__main__':
             #     print(document_id, '\t', chunk.text)
             for e in document.ents:
                 if not e.text.isspace():
-                    print(e.text, '\t', e.label_)
-
+                    for entity, labels in search(DOMAIN, e.text).items():
+                        print(entity, labels)
+                    # results = search(DOMAIN, e.text)
+                    # fb_id =results[0][0]
+                    # print(document_id, '\t', e.text, '\t', fb_id)
+        break
         ## Defining the English stopwords
         # stop_words = set(stopwords.words('english'))
         #
