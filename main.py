@@ -15,6 +15,11 @@ from spacy_cld import LanguageDetector
 from spacy.pipeline import DependencyParser
 
 
+# https://spacy.io/usage/linguistic-features#entity-types
+ALLOWED_ENTITY_TYPES = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC',
+                        'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW']
+
+
 def search(domain, query):
     url = 'http://%s/freebase/label/_search' % domain
     response = requests.get(url, params={'q': query, 'size':1})
@@ -100,8 +105,9 @@ if __name__ == '__main__':
             continue
 
         # Check for English content
-        if page_text and document._.language_scores['en'] < 0.90:
-            continue
+        if 'en' in document._.language_scores:
+            if page_text and document._.language_scores['en'] < 0.90:
+                continue
 
         if document.is_parsed:
             # for chunk in document.noun_chunks:
