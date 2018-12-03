@@ -16,7 +16,7 @@ from spacy.pipeline import DependencyParser
 
 
 # https://spacy.io/usage/linguistic-features#entity-types
-ALLOWED_ENTITY_TYPES = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC',
+ALLOWED_ENTITY_LABELS = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC',
                         'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW']
 
 
@@ -89,6 +89,8 @@ if __name__ == '__main__':
         # HTML parser
         soup = BeautifulSoup(html.decode('utf-8', 'ignore'), 'html.parser')
 
+        # TODO: removes menus and such from page text
+
         # Removes script / style tags from the HTML
         # (For some reason they get reconized as text)
         for script in soup(['script', 'style']):
@@ -113,9 +115,11 @@ if __name__ == '__main__':
             # for chunk in document.noun_chunks:
             #     print(document_id, '\t', chunk.text)
             for e in document.ents:
-                if not e.text.isspace():
+                if e.label_ in ALLOWED_ENTITY_LABELS:
                     for fb_id, labels in search(DOMAIN, e.text).items():
-                        print(document_id, '\t', e.text, '\t', fb_id)
+
+                        fb_id_formatted = '/m/' + fb_id.split(':')[1].split('.')[1]
+                        print(document_id, '\t', e.text, '\t', fb_id_formatted)
                         break
         # break
         ## Defining the English stopwords
