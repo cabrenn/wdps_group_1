@@ -16,6 +16,54 @@ Run ```python_requirements.sh``` to download and install required files and lang
 
 Run ```run.sh``` to execute the application.
 
+
+
+## Working with Python virtual environment on head node
+
+1. Define which python version are you going to use (Python 3.5 in example) and run:
+
+   ```bash
+   python3.5 /home/wdps1801/.local/lib/python3.5/site-packages/virtualenv.py [LIBNAME]
+   python3.5 /home/wdps1801/.local/lib/python3.5/site-packages/virtualenv.py --relocatable [LIBNAME]
+   ```
+
+   OR
+
+   ```bash
+   python3.5 -m venv [LIBNAME]
+   ```
+
+2. Activate virtual environment:
+
+   ```bash
+   source [LIBNAME]\bin\activate
+   ```
+
+3. Check versions of python and pip 
+   ```bash
+   python --version
+   pip --version
+   ```
+   If versions differ from the one installed (Python 3.5) use:
+
+   - ```[LIBNAME]/bin/python``` instead of ```python```
+   - ```python -m pip [OPTIONS]``` instead of ```pip```
+4. Use ```deactivate``` to exit the virtual environment.
+
+
+### Requirements
+
+Python 3+
+
+### Installation
+
+Install required pip packages from ```requirements.txt``` file using ```pip install -r requirements.txt```.
+Run ```python_requirements.sh``` to download and install required files and language models.
+
+### Execution
+
+Run ```run.sh``` to execute the application.
+
 ## Git cheatsheet
 
 ## Check status
@@ -64,6 +112,8 @@ If there were no conflicts or you manually fixed them, you can now push the merg
 
 ## When own version is not good anymore 
 ```git pull 
-```git fetch - - all
-```git reset --hard origin/master
-```git pull  
+​```git fetch - - all
+​```git reset --hard origin/master
+​```git pull  
+
+```
