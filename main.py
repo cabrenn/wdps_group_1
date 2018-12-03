@@ -3,6 +3,7 @@ import spacy
 import sys
 import subprocess
 import requests
+import pycld2
 from subprocess import check_output
 from io import BytesIO
 from bs4 import BeautifulSoup
@@ -42,17 +43,21 @@ def strip_http_headers(http_reply):
 def strip_whitespace(text):
     """ removes whitespace from a given text. """
     new_text = ''
-    for sentence in text.split('\n'):
-        if not len(sentence) == 0:
-            new_text += (' '.join(sentence.split()) + '\n')
+    for w in text.split():
+
+        tmp = w.strip(' \t\n\r') + ' '
+        if not len(tmp) == 0:
+            new_text += tmp
+
     return new_text
 
 
 if __name__ == '__main__':
 
     _, DOMAIN = sys.argv
-    hdfs_file = subprocess.check_output(["hdfs", "dfs", "-text", "/user/wdps1801/sample.warc.gz"])
-    f = warc.WARCFile(fileobj=BytesIO(hdfs_file))
+    # hdfs_file = subprocess.check_output(["hdfs", "dfs", "-text", "/user/wdps1801/sample.warc.gz"])
+    # f = warc.WARCFile(fileobj=BytesIO(hdfs_file))
+    f = warc.open('sample.warc.gz')
     # nlp = spacy.load('en', disable=['parser', 'ner'])
     nlp = spacy.load('en')
     language_detector = LanguageDetector()
@@ -70,6 +75,9 @@ if __name__ == '__main__':
         # The document ID corresponding to this record
         document_id = record['WARC-Trec-ID']
 
+        # if not document_id.endswith('091'):
+        #     continue
+
         # Removes HTTP header from the WARC records
         html = strip_http_headers(record.payload.read())
 
@@ -86,7 +94,10 @@ if __name__ == '__main__':
 
 
         # Generate tokens with Spacy
-        document = nlp(page_text)
+        try:
+            document = nlp(page_text)
+        except pycld2.error as e:
+            continue
 
         # Check for English content
         if page_text and document._.language_scores['en'] < 0.90:
@@ -97,12 +108,10 @@ if __name__ == '__main__':
             #     print(document_id, '\t', chunk.text)
             for e in document.ents:
                 if not e.text.isspace():
-                    for entity, labels in search(DOMAIN, e.text).items():
-                        print(entity, labels)
-                    # results = search(DOMAIN, e.text)
-                    # fb_id =results[0][0]
-                    # print(document_id, '\t', e.text, '\t', fb_id)
-        break
+                    for fb_id, labels in search(DOMAIN, e.text).items():
+                        print(document_id, '\t', e.text, '\t', fb_id)
+                        break
+        # break
         ## Defining the English stopwords
         # stop_words = set(stopwords.words('english'))
         #
