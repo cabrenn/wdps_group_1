@@ -1,29 +1,47 @@
+from pyspark import SparkContext
 import warc
 import spacy
 import sys
 import subprocess
 import requests
-import pycld2
+# import pycld2
 from io import BytesIO
 from bs4 import BeautifulSoup
 from spacy.lang.en import English
 from spacy.tokenizer import Tokenizer
 from spacy.lemmatizer import Lemmatizer
 from spacy.pipeline import Tagger
-from spacy_cld import LanguageDetector
+# from spacy_cld import LanguageDetector
 from spacy.pipeline import DependencyParser
 import collections
+#import time
+
+# import subprocess
+#import logging
+#import os
+
+#logging.basicConfig(filename='py.log',level=logging.DEBUG)
+#logging.basicConfig(format='%(asctime)s %(message)s')
+#logging.info('++++Started DataFramedriversRddConvert++++')
 
 
-DOMAIN sys.argv[1]
+#ES_BIN="/home/bbkruit/scratch/wdps/elasticsearch-2.4.1/bin/elasticsearch"
+#ES_PORT="9200"
+
+#result = subprocess.run(['prun','-o','.es_log','-v','-np','1','ESPORT=' + ES_PORT,ES_BIN,'</dev/null 2>','.es_node','&'], stderr=subprocess.PIPE)
+
+#r_split = result.stderr.decode('utf-8').split(':')
+#node_name = r_split[4].replace('/0','').strip() + ":" + ES_PORT
+
+#time.sleep(15)
 
 # https://spacy.io/usage/linguistic-features#entity-types
 ALLOWED_ENTITY_TYPES = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC',
                         'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW']
+DOMAIN = sys.argv[1]
 
-
-def search(domain, query):
-    url = 'http://%s/freebase/label/_search' % domain
+def search(query):
+    url = 'http://%s/freebase/label/_search' % DOMAIN
     response = requests.get(url, params={'q': query, 'size':1})
     id_labels = {}
     if response:
@@ -64,10 +82,11 @@ def create_freebase_ids(html):
         return
     else:
         pass
+    print('working on html [{}]'.format(html[0]))
         # print("HTML: [" + html[1] + "]")
     nlp = spacy.load('en')
-    language_detector = LanguageDetector()
-    nlp.add_pipe(language_detector)
+    # language_detector = LanguageDetector()
+    #nlp.add_pipe(language_detector)
     
     f = warc.WARCFile(fileobj=BytesIO(("WARC/1.0" + html[1]).encode('utf-8')))
     # nlp = spacy.load('en', disable=['parser', 'ner'])
@@ -99,22 +118,33 @@ def create_freebase_ids(html):
         # Generate tokens with Spacy
         try:
             document = nlp(page_text)
-        except pycld2.error as e:
+        except:  # pycld2.error as e:
             continue
 
         # Check for English content
-        if 'en' in document._.language_scores:
-            if page_text and document._.language_scores['en'] < 0.90:
-                continue
+        #if 'en' in document._.language_scores:
+        #    if page_text and document._.language_scores['en'] < 0.90:
+        #        continue
 
         if document.is_parsed:
             # for chunk in document.noun_chunks:
             #     print(document_id, '\t', chunk.text)
             for e in document.ents:
                 if not e.text.isspace():
-                    for fb_id, labels in search(DOMAIN, e.text).items():
-                        yield(document_id, '\t', e.text, '\t', fb_id)
+                    try:
+                        #logging.info(e.text)
+                        print('Searching for [{}] in elastic'.format(e.text))
+                    except:
+                        continue
+                    for fb_id, labels in search(e.text).items():
+                        try:
+                            #logging.info(fb_id)
+                            print('FB-ID [{}] in ES'.format(fb_id))
+                        except:
+                            continue
+                        yield '{}\t{}\t{}'.format(document_id, e.text, fb_id)
                         break
+                    #print('Found for [{}] in elastic'.format(e.text))
         break
     
 sc = SparkContext("yarn", "wdps1801")
@@ -123,12 +153,17 @@ sc = SparkContext("yarn", "wdps1801")
 #KEYNAME = "WARC-TREC-ID"
 OUTFILE = "outfile"
 
-rdd = sc.newAPIHadoopFile("sample.warc.gz", #HDFS_ROOT + "sample.warc.gz",
+rdd = sc.newAPIHadoopFile("/user/wdps1801/sample.warc.gz", #HDFS_ROOT + "sample.warc.gz",
     "org.apache.hadoop.mapreduce.lib.input.TextInputFormat",
     "org.apache.hadoop.io.LongWritable",
     "org.apache.hadoop.io.Text",
     conf={"textinputformat.record.delimiter": "WARC/1.0"})
 
-rdd = rdd.flatMap(create_freebase_ids)
 
+rdd = sc.parallelize(rdd.take(500))
+rdd = rdd.flatMap(create_freebase_ids)
 rdd = rdd.saveAsTextFile(OUTFILE)
+
+
+#subprocess.call(["hdfs", "dfs", "-appendToFile", "py.log", "/user/wdps1801/py.log"])
+#os.remove ('py.log')
