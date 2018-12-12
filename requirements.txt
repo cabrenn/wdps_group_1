@@ -4,3 +4,5 @@ spacy
 bs4
 spacy_cld
 requests
+cssselect
+lxml
