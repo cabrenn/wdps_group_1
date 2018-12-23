@@ -3,15 +3,23 @@ from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
 import spacy
 import re
+from spacy_cld import LanguageDetector
+import pycld2
 from lxml.etree import tostring
 import lxml.html
+from subprocess import getoutput
+import logging
+from time import time
 
 # import pycld2
 
 # https://spacy.io/usage/linguistic-features#entity-types
 ALLOWED_ENTITY_LABELS = ['PERSON', 'NORP', 'FAC', 'GPE', 'LOC',
-                         'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW']
+                         'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW', 'ORG']
                          #'ORG'
+
+
+
 
 
 class EntityLinker:
@@ -25,6 +33,10 @@ class EntityLinker:
         ret_found = self.regex_entity_validator.search(entity)
         return not bool(ret_found)
 
+    def skip_first_item(self, iterable_seq):
+        seq_it = iter(iterable_seq)
+        next(seq_it)
+        return iterable_seq
 
     def is_english_doc(self, doc):
         if 'en' in doc._.language_scores:
@@ -54,53 +66,57 @@ class EntityLinker:
         return new_text
 
     def create_freebase_ids_spark(self, html):
-        if not html[1]:
-            return
-        f = warc.WARCFile(fileobj=StringIO(b'WARC/1.0' + html[1]))
-        yield self.get_freebase_ids(f.next())
+        try:
+            f = warc.WARCFile(fileobj=BytesIO(("WARC/1.0" + html[1]).encode('utf-8')))
+            ent = self.get_freebase_ids(next(iter(f)))
+            if ent is not None:
+                return list(ent)
+        except Exception as e:
+            if "warc-trec-id" not in str(e):
+                return ['warc-trec-id exception: {}'.format(e)]
+                raise e
+            return ['other exception: {}'.format(e)]
+        return ['{}'.format('this shouldnt happen')]
 
-    def skip_first_item(self, iterable_seq):
-        seq_it = iter(iterable_seq)
-        next(seq_it)
-        return iterable_seq
+    
 
     def create_freebase_ids_local(self, input_path, output_path):
         f = warc.open(input_path)
         i = 0
         with open(output_path, 'w') as output_file:
             for record in self.skip_first_item(f):
+                time2 = time()
                 for entity in self.get_freebase_ids(record):
-                    if entity is not None:
+                    if entity is not None and entity is not '':
                         output_file.write('{}\n'.format(entity))
                 i = i+1
-                if i > 20:
-                    break
-            
-    
+
 
     def get_freebase_ids(self, warc_record):
-        # The document ID corresponding to this record
-        document_id = warc_record['WARC-Trec-ID']
-        print(document_id)
-        #print(document_id)
+        nlp = spacy.load('en_core_web_sm')
+        try:
+            language_detector = LanguageDetector()
+            nlp.add_pipe(language_detector)
+        except:
+            pass
+
+        try:  
+            document_id = warc_record['WARC-Trec-ID']
+        except Exception as e:
+            return 'Exception warc: [{}]'.format(e)
 
         read_record = warc_record.payload.read()
         
-        # Removes HTTP header from the WARC records
         striped_headers = self.strip_http_headers(read_record)
         if striped_headers is None:
-            return
-
+            return 'striped_headers is: [{}]'.format(striped_headers)
+        
         document = lxml.html.parse(BytesIO(striped_headers))
         try:
             self.ad_remover.remove_ads(document)
-        except:
-            #print("[{}]".format(document))
-            #print("[{}]".format(read_record))
-            #print("[{}]".format(len(read_record)))
-            #print("[{}]".format(len(striped_headers)))
-            return
-
+        except Exception as e:
+            return 'Exception ad_remover: [{}]'.format(e)
+        # return ''
         clean_html = tostring(document).decode("utf-8")
        
         # HTML parser
@@ -127,13 +143,17 @@ class EntityLinker:
 
         # Generate tokens with Spacy
         try:
-            document = self.nlp(page_text)
+            document = nlp(page_text)
         except pycld2.error as e:
-            return
+            return 'pycld2 exception: [{}]'.format(e)
+        except AttributeError as e:
+            if not str(e).startswith('[E047]'):
+                raise e
+            return 'AttributeError: [{}]'.format(e)
 
         # Check for English content
         if not self.is_english_doc(document):
-            return
+            return 'no english doc'
 
         if document.is_parsed:
             for e in document.ents:
@@ -141,7 +161,8 @@ class EntityLinker:
                     if not self.is_valid_entity(e.text):
                         continue
                 
-                    fb_id = self.es_api.query(e.text)
+                    # fb_id = self.es_api.query(e.text)
+                    fb_id = self.es_api.get_fb_id(e.text, e.label_)
                     if not fb_id:
                         continue
                     yield '{}\t{}\t{}'.format(document_id, e.text, fb_id)

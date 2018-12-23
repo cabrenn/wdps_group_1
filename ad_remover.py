@@ -35,13 +35,20 @@ class AdRemover(object):
 
         # create one large query by joining them the xpath | (or) operator
         self.xpath_query = '|'.join(rules)
+        #print(self.xpath_query)
 
     def remove_ads(self, tree):
+        from time import time
         """Remove ads from an lxml document or element object.
 
         The object passed to this method will be modified in place."""
+        time1 = time()
+        elem_map = tree.xpath(self.xpath_query)
+        print('XPATH: [{}]'.format(int(round((time() - time1) * 1000))))
 
-        for elem in tree.xpath(self.xpath_query):
+        time1 = time()
+        for elem in elem_map:
+            print('ELEM: [{}]'.format(elem))
             elem.getparent().remove(elem)
-
+        print('Remove parent elements: [{}]'.format(int(round((time() - time1) * 1000))))
 

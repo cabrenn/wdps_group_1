@@ -1,4 +1,5 @@
 from os import path
+import warc
 import sys
 import spacy
 from spacy_cld import LanguageDetector
@@ -14,7 +15,6 @@ OUTPUT_FOLDER = "freebase_ids"
     - make sparql better
 '''
 
-
 def main():
     sparql_api = sparql.SparqlApi(sys.argv[3], sys.argv[4])
     es_api = es.EsApi(sys.argv[1], sys.argv[2], sparql_api)
@@ -25,6 +25,8 @@ def main():
     spacy_nlp.add_pipe(language_detector)
     el_app = el.EntityLinker(es_api, spacy_nlp, ad_rm_api)
     el_app.create_freebase_ids_local('sample.warc.gz', '{}/out.txt'.format(OUTPUT_FOLDER))
+    #create_freebase_ids_local(el_app, 'sample.warc.gz', '{}/out.txt'.format(OUTPUT_FOLDER))
+
 
 if __name__ == '__main__':
     main()
