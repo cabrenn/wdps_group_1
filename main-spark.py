@@ -29,7 +29,7 @@ def main():
                               "org.apache.hadoop.io.LongWritable",
                               "org.apache.hadoop.io.Text",
                               conf={"textinputformat.record.delimiter": "WARC/1.0"})
-    rdd = sc.parallelize(rdd.take(10))
+    #rdd = sc.parallelize(rdd.take(10))
     rdd = rdd.flatMap(lambda a : el_app.create_freebase_ids_spark(a))
     rdd = rdd.saveAsTextFile(output_folder)
     
