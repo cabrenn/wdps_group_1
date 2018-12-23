@@ -9,58 +9,19 @@ Python 3+
 
 ### Installation and Execution
 
-When running for the first time run ```run.sh create-env```. Afterwards just run ```run.sh```. 
-
-## Git cheatsheet
-
-## Check status
-To see files what files are staged to be pushed to git type:
+You have to create virtual environment first:
 
 ```bash
-git status
-```
+    python -m venv venv
+    source venv/bin/activate
+    python -m pip install -r requirements.txt
+    python -m spacy download en_core_web_sm
+    deactivate
 
-
-### Pull latest code
-```bash
-git pull
-```
-
-
-### Push new code
-```bash
-git add <changed_files>
-git commit -m "commit message"
-git push
-```
-
-The first time you might have to run the following command instead of `git push` to configure git properly:
-```bash
-git push -u origin master
-```
-
-
-If you get an error about local changes then you have to merge your local code with the code on github:
-
-1. Stash your local code:
-```bash
-git stash
-```
-2. Pull the latest code from the github sever:
-```bash
-git pull
-```
-3. Merge (hopefully happens automatically, if a conflict happens you need to go into the relevant file and fix it yourself):
-```bash
-git stash pop
-```
-
-If there were no conflicts or you manually fixed them, you can now push the merged code to github (see section "Push new code")
-
-## When own version is not good anymore 
-```git pull 
-​```git fetch - - all
-​```git reset --hard origin/master
-​```git pull  
+    pushd venv/
+    zip -rq ../venv.zip *
+    popd
 
 ```
+
+Afterwards just run ```./run_app.sh [INPUT HDFS FILE] [OUTPUT HDFS FILE]``` i.e. ```./run_app.sh /user/wdps1801/sample/warc/gz /user/wdps1801/freebase_ids```
